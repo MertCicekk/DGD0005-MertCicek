@@ -446,9 +446,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: FishNet.Runtime::FishNet.Managing.Statistic.StatisticsManager
   _runInRelease: 0
   _networkTraffic:
-    _enableMode: 0
-    _updateClient: 0
-    _updateServer: 0
+    _enableMode: 1
+    _updateClient: 1
+    _updateServer: 1
 --- !u!114 &558727243
 MonoBehaviour:
   m_ObjectHideFlags: 0
