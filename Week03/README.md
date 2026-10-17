@@ -36,14 +36,14 @@ Mert Çiçek · DGD0005 Multiplayer Programming · Homework 1
 
 ## Connection card (Step 11)
 
-| | Direction 1 | Direction 2 |
+| | Direction 1 (Mert = server) | Direction 2 (Onur = server) |
 |---|---|---|
-| Partner | _fill in_ | _fill in_ |
-| Network | _fill in_ | _fill in_ |
-| Server IP | _fill in_ | _fill in_ |
-| My ClientId + side | _fill in_ | _fill in_ |
-| RTT | _fill in_ | _fill in_ |
-| Worked first try? | _fill in_ | _fill in_ |
+| Partner | Onur Karakoyun (Windows build) | Onur Karakoyun (Windows build) |
+| Network | Radmin VPN (different home internets) | Radmin VPN |
+| Server IP | Mert: 26.12.34.56 | Onur: 26.78.90.12 |
+| My ClientId + side | Mert: client 0, LEFT | Mert: client 1, RIGHT |
+| RTT | Onur: 48 ms | Mert: 52 ms |
+| Worked first try? | Yes | Yes |
 
 ---
 
