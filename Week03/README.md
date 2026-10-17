@@ -148,3 +148,51 @@ Back at **30** for the hand-in.
 9. The **server** decides, using **its own copies** of both paddles (as last received, a tick or two old) and its ball. The client whose paddle "clearly touched it" sees the ball go through (or bounce and snap back). If a client wrote the ball's `InPlay` itself, only its local copy would change — nobody else would see it and it would snap back at the next server send; and any client could serve whenever it liked.
 
 10. 8 objects × 30 ticks/s × 40 bytes = **9,600 B/s ≈ 9.6 kB/s** received per client; with 4 clients the server sends 4 × 9.6 = **38.4 kB/s**. In my Step 10 table, tick 10 cut the traffic to roughly a third and made the ball step in every window; my own paddle did not change because I move it locally every frame — the network only carries it to the others.
+
+---
+
+## Vocabulary (notes Section 13, for the demo)
+
+| Word | Meaning, in my words |
+|---|---|
+| topology | Who connects to whom and which machine is trusted. |
+| dedicated server | A server process nobody plays on; every player is a client of it. |
+| listen server | One player's game is also the server (the host); trusted, zero ping for them. |
+| peer-to-peer | Players connect to each other directly; nobody is the referee. |
+| client | A player's game: sends what the player wants, shows what the server says. |
+| host | One process that is server and client at the same time. |
+| connection | One client's link to the server. |
+| ClientId | The small number FishNet gives each connection, starting at 0. |
+| tick | One fixed simulation step of the server. |
+| tick rate | Ticks per second (30 here); how often state is sent. |
+| packet | One chunk of bytes on the network, a few hundred bytes, below the ~1,200 B MTU. |
+| UDP vs. TCP | UDP throws packets (may be lost/late); TCP guarantees order and waits for lost bytes. Games use UDP. |
+| reliable / unreliable | Reliable = guaranteed and ordered, costs latency (goals); unreliable = may be lost, always fresh (positions). |
+| RTT / ping | Time for a message to go to the server and back; half is about the one-way delay. |
+| bandwidth | Bytes per second sent/received. |
+| NetworkManager | The one switchboard component that starts server/client and holds the sub-managers. |
+| transport | The layer that moves the bytes (Tugboat = plain UDP); swappable without changing game code. |
+| NetworkObject | Gives an object a network identity, an owner and spawning. |
+| ObjectId | The id of a NetworkObject, the same on every machine. |
+| NetworkBehaviour | Base class for scripts on networked objects: IsOwner, callbacks, SyncVars, RPCs. |
+| scene object | A NetworkObject already in the scene; the server spawns it for every client, no owner. |
+| prefab | A saved object template; networked prefabs are registered in DefaultPrefabObjects. |
+| spawn | The server creating a networked object and telling every client to create its copy. |
+| PlayerSpawner | Spawns the player prefab once per connection, owned by that connection. |
+| owner | The client connection allowed to control an object (or nobody → server). |
+| ownership | Who the owner is: decides IsOwner, who may call ServerRpcs, whose NetworkTransform sends. |
+| observer | A client allowed to see an object and receive its updates. |
+| replication | Copying state from the machine that knows it to the machines that need it. |
+| state vs. event | State has a current value (score) → SyncVar; an event happens once (goal) → RPC. |
+| SyncVar | A field only the server writes; every machine mirrors it, late joiners get it. |
+| SyncList | A SyncVar for a whole list; sends operations, not the list. |
+| OnChange | Callback that fires on every machine when a SyncVar changes. |
+| NetworkTransform | Component that sends position (rotation, scale) every tick and interpolates it. |
+| client-authoritative | The owner decides the value and the server relays it — convenient, cheatable. |
+| interpolation | Drawing an object between the last received positions, a couple of ticks behind, so it glides. |
+| ServerRpc | Method called on a client, runs on the server: a request. |
+| ObserversRpc | Called on the server, runs on every observing client: an event for all. |
+| TargetRpc | Called on the server, runs on one client: a private message. |
+| RequireOwnership | ServerRpc option; false lets non-owners call it (FishNet passes the caller's connection). |
+| serialization | Turning values into bytes to send, and back. |
+| interest management | Sending each client only what is relevant to it (near, same scene/team). |
