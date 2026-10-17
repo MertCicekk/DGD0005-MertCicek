@@ -1,7 +1,8 @@
-// Pong — Step 4. The networked paddle. One prefab, spawned once per connection by the PlayerSpawner.
+// Pong — Steps 4 and 8. The networked paddle. One prefab, spawned once per connection by the PlayerSpawner.
 // The same script runs on the server, on the owner's client and on every other client;
 // only the answer to IsOwner differs (Notes 4.4, 5).
 using System.Collections.Generic;
+using FishNet.Connection;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 using UnityEngine;
@@ -83,10 +84,13 @@ public class PaddleController : NetworkBehaviour
     private void Update()
     {
         if (!IsOwner) return;                               // the line that stops everyone else moving my paddle
-        if (Side.Value == Spectator) return;
 
         Keyboard kb = Keyboard.current;
         if (kb == null) return;
+
+        if (kb.spaceKey.wasPressedThisFrame) RequestServe(); // ask; the server decides (Step 8)
+
+        if (Side.Value == Spectator) return;
 
         float dir = 0f;                                     // one keyboard per machine: W/S or arrows
         if (kb.wKey.isPressed || kb.upArrowKey.isPressed)   dir += 1f;
@@ -94,6 +98,42 @@ public class PaddleController : NetworkBehaviour
 
         transform.position += Vector3.forward * dir * speed * Time.deltaTime;
         Court.ClampPaddle(transform);
+    }
+
+    // ---------- Step 8: the three RPC directions ----------
+
+    /// client -> server. A request the server may refuse.
+    [ServerRpc]
+    private void RequestServe()
+    {
+        GameState gs = GameState.Instance;
+        NetworkBall ball = NetworkBall.Instance;
+        if (gs == null || ball == null) return;
+        if (Side.Value != gs.ServingSide.Value) return;     // not your serve
+        if (ball.InPlay.Value) return;                       // already in play
+
+        ball.Serve(1 - Side.Value);                          // towards the other side
+    }
+
+    /// server -> every client. An event everyone reacts to.
+    [ObserversRpc]
+    public void AnnounceGoal(int left, int right)
+    {
+        ConnectionHud.Flash($"{SideName(Side.Value)} scored! {left} : {right}");
+    }
+
+    /// server -> one client. A private message.
+    [TargetRpc]
+    public void YouServe(NetworkConnection target)
+    {
+        ConnectionHud.Flash("YOU SERVE");
+    }
+
+    public static PaddleController FindBySide(int side)
+    {
+        foreach (PaddleController p in All)
+            if (p != null && p.Side.Value == side) return p;
+        return null;
     }
 
     /// Puts the paddle on its side and colours it. Called on start and whenever Side changes.

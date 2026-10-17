@@ -1,4 +1,4 @@
-// Pong — Step 7. The score everybody shares. On an empty "GameState" scene object
+// Pong — Steps 7 and 8. The score everybody shares. On an empty "GameState" scene object
 // with a NetworkObject: it belongs to nobody, the server writes it, every client mirrors it,
 // and a client that joins late receives the current values on spawn.
 using FishNet.Object;
@@ -39,5 +39,11 @@ public class GameState : NetworkBehaviour
         if (scorerSide == PaddleController.Left) LeftScore.Value++;
         else                                     RightScore.Value++;
         ServingSide.Value = 1 - scorerSide;      // the side that conceded serves
+
+        // 2. then the events: everyone hears the goal, only the conceder hears YOU SERVE
+        PaddleController scorer   = PaddleController.FindBySide(scorerSide);
+        PaddleController conceder = PaddleController.FindBySide(1 - scorerSide);
+        if (scorer != null)   scorer.AnnounceGoal(LeftScore.Value, RightScore.Value);
+        if (conceder != null) conceder.YouServe(conceder.Owner);
     }
 }

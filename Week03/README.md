@@ -63,3 +63,16 @@ Mert Çiçek · DGD0005 Multiplayer Programming · Homework 1
 `BallSpawner` on the `Court` object creates the one ball: it instantiates the Ball prefab at `(0, Court.BallY, 0)` in `OnStartServer()` and calls `Spawn(...)`, so it only ever runs on the server, once.
 The first line of the ball's `Update` is `if (!IsServerInitialized) return;` — only the server moves the ball; clients just receive its position.
 
+---
+
+## Step 8
+
+1. **Which RPC for a hit sound on all clients? Which for "not your serve" to one?**
+   A hit sound for everyone is an `[ObserversRpc]` (server → all observers). "Not your serve" to one player is a `[TargetRpc]` (server → that one connection).
+
+2. **Where is the score, who may change it?**
+   In two `SyncVar<int>`s, `LeftScore` and `RightScore`, on the `GameState` scene object. Only the server may change them, in `GameState.Goal()`; clients only mirror them.
+
+3. **Ball bounced on the server but passed through on your screen: which paddle copy did the server use, why different?**
+   The server used **its own copy** of my paddle — the position my `NetworkTransform` last delivered to it, a tick or two old. My screen shows my paddle where it is *now*, so the two copies disagree; the server's copy is the one that counts.
+
