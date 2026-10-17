@@ -44,12 +44,14 @@ public class PaddleController : NetworkBehaviour
         Side.Value = side;
 
         Debug.Log($"[Server] client {OwnerId} gets side {SideName(side)}");
+        GameState.Announce($"client {OwnerId} joined as {SideName(side)}");
     }
 
     public override void OnStopServer()
     {
         base.OnStopServer();
         All.Remove(this);
+        GameState.Announce($"client {OwnerId} left ({SideName(Side.Value)})");
     }
 
     private bool IsTaken(int side)
@@ -113,6 +115,7 @@ public class PaddleController : NetworkBehaviour
         if (ball.InPlay.Value) return;                       // already in play
 
         ball.Serve(1 - Side.Value);                          // towards the other side
+        GameState.Announce($"{SideName(Side.Value)} served");
     }
 
     /// server -> every client. An event everyone reacts to.
