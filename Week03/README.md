@@ -32,3 +32,34 @@ Mert Çiçek · DGD0005 Multiplayer Programming · Homework 1
 3. **If the server believes "my paddle is at z = 3.2" from a client, what is the first cheat?**
    A client can send any position it likes — teleport the paddle straight to wherever the ball is (or move it faster than allowed), and the server will accept it.
 
+---
+
+## Connection card (Step 11)
+
+| | Direction 1 | Direction 2 |
+|---|---|---|
+| Partner | _fill in_ | _fill in_ |
+| Network | _fill in_ | _fill in_ |
+| Server IP | _fill in_ | _fill in_ |
+| My ClientId + side | _fill in_ | _fill in_ |
+| RTT | _fill in_ | _fill in_ |
+| Worked first try? | _fill in_ | _fill in_ |
+
+---
+
+## Design sheet (before Step 7)
+
+| Thing | State or event? | FishNet piece | On which object? | Who writes / calls? |
+|---|---|---|---|---|
+| Ball position | state | NetworkTransform (client auth off) | Ball | server |
+| Ball in play? | state | SyncVar\<bool\> | Ball | server |
+| Two scores | state | SyncVar\<int\> ×2 | GameState | server |
+| Whose serve | state | SyncVar\<int\> | GameState | server |
+| "Let me serve" | event (request) | ServerRpc | Paddle | owner client |
+| "LEFT scored!" to all | event | ObserversRpc | Paddle (scorer) | server |
+| "YOU SERVE" to one | event | TargetRpc | Paddle (conceder) | server |
+| Event feed | state | SyncList\<string\> | GameState | server |
+
+`BallSpawner` on the `Court` object creates the one ball: it instantiates the Ball prefab at `(0, Court.BallY, 0)` in `OnStartServer()` and calls `Spawn(...)`, so it only ever runs on the server, once.
+The first line of the ball's `Update` is `if (!IsServerInitialized) return;` — only the server moves the ball; clients just receive its position.
+
