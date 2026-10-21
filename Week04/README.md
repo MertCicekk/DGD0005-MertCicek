@@ -51,14 +51,42 @@ Debug keys in `Update`, after the owner guard: **C** calls `ServerSetAxis(1f)` 2
 
 ---
 
-## Vocabulary (for the demo)
+## Vocabulary (Week 4, for the demo)
 
 | Word | Meaning, in my words |
 |---|---|
+| authority | Which machine's word counts for a value. Whoever has authority writes it; everyone else only shows it. |
 | server-authoritative | The server owns the truth: it computes the state, clients only send input and show the result. |
-| input vs. state | The client sends what the player *wants* (axis); the server decides what *happens* (position). |
-| validation | The server checking a request before believing it: well-formed → too fast → allowed by the game rule → write state → announce. |
+| client-authoritative | The owner client decides the value and the server relays it — convenient, but the client can lie (Homework 1 paddle). |
+| Client Authoritative (setting) | The `NetworkTransform` tick box. On: owner → server → others. Off: server → everyone. |
+| Send To Owner | `NetworkTransform` option: with authority off, also send the server's position back to the owner. Without it my own paddle never moved on my screen. |
+| trust | The server treats every client message as a request that may be wrong or a lie, never as a fact. |
+| input vs. state | The client sends what the player *wants* (axis −1/0/+1); the server decides what *happens* (position). |
+| axis | The one number my input is: +1 up, −1 down, 0 nothing. |
+| OnTick | `TimeManager.OnTick`, the event that fires once per tick; I send input and move the paddle there, not in `Update`. |
+| tick / TickDelta | One fixed server step (30 per second); `TickDelta` is its length in seconds (1/30). |
+| ServerRpc | Method the owner calls and the server runs: here `ServerSetAxis`, a request the server checks. |
+| validation | Checking a request before believing it, always in this order: well-formed → too fast → allowed by the game rule → write state → announce. |
+| well-formed | The value is a usable number: not NaN, inside −1…+1 (clamp). |
+| clamp | Forcing a value into a range: 50 becomes 1. |
+| game rule | Whether this player may do this at all: a spectator has no paddle to move. |
 | rate limit | Refusing a second request from the same client inside a time window (30 ms here). |
-| tick / TickDelta | One fixed server step; `TickDelta` is its length in seconds (1/30). |
+| per-client state | Server memory kept once per client (`_lastInputTime` on each paddle), so one player never blocks another. |
+| rejected input | A request the server refused; counted in `RejectedInputs` and logged. |
+| cheat / cheating client | A client that sends what a real player could not: spam (C), speed hack (X), teleport (T). |
+| snap back | The client's local change is overwritten by the next server update, because the server never agreed to it. |
 
-**The pointed-at line:** `axis = Mathf.Clamp(axis, -1f, 1f);` in `ServerSetAxis` — it runs on the server, so the client cannot decide how fast its paddle moves.
+---
+
+## The pointed-at line (demo prep)
+
+The instructor points at a line; I explain it with two words from the table.
+
+| Line | Two words | What I say |
+|---|---|---|
+| `axis = Mathf.Clamp(axis, -1f, 1f);` | **validation**, **server-authoritative** | Runs on the server inside the ServerRpc, so a client sending 50 still moves at normal speed: the server decides the speed. |
+| `if (_lastInputTime >= 0 && now - _lastInputTime < MinInputGap)` | **rate limit**, **per-client state** | A second input inside 30 ms is refused; the timestamp is per paddle, so only that client is limited. |
+| `transform.position += Vector3.forward * _serverAxis * speed * (float)TimeManager.TickDelta;` | **server-authoritative**, **tick** | Only the server writes the position, once per tick, from the last accepted input. |
+| `ServerSetAxis(axis);` in `OnTick` | **input vs. state**, **ServerRpc** | The owner sends only its input every tick, never its position. |
+| `if (Side.Value == Spectator) return;` | **game rule**, **validation** | A spectator has no paddle, so its input is refused. |
+| `transform.position = NetworkBall.Instance.transform.position;` (T) | **cheating client**, **snap back** | Changes only my copy, sends nothing; the server's position overwrites it next tick. |
