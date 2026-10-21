@@ -47,7 +47,7 @@ Debug keys in `Update`, after the owner guard: **C** calls `ServerSetAxis(1f)` 2
 
 1. **C sends 20 inputs and the server accepts one. Why is the paddle not 20 times faster?** The server keeps only one `_serverAxis` and moves the paddle once per tick by `_serverAxis * speed * TickDelta`, so the number of messages never changes how far it moves.
 2. **T moved the paddle on your screen. Why did the ball on the server not notice?** The teleport only changed my local copy and sent nothing; the ball collides with the server's copy of my paddle, which never moved, and the server's `NetworkTransform` overwrote my position on the next tick.
-3. **Which of the three cheats would also fail without the rate limit, and why?** X and T: X is cut to 1 by `Mathf.Clamp`, and T never reaches the server at all, so server authority alone defeats both; only C (the flood) needs the rate limit.
+3. **Which of the three cheats would also fail without the rate limit, and why?** X and T: X is cut to 1 by `Mathf.Clamp`, and T never reaches the server at all, so server authority alone defeats both. Even C would not make the paddle faster (the server moves once per tick with one axis); what the rate limit stops is the flood itself, 20 messages where one is enough.
 
 ---
 

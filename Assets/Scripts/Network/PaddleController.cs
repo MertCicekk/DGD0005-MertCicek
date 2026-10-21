@@ -30,8 +30,6 @@ public class PaddleController : NetworkBehaviour
     private double _lastInputTime = -1;
     public int RejectedInputs;
 
-
-
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() { All.Clear(); Local = null; }
 
@@ -174,7 +172,6 @@ public class PaddleController : NetworkBehaviour
 
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
 
-
     // ---------- Homework 2, Step 2: input up, position down ----------
     public override void OnStartNetwork()
     {
@@ -211,10 +208,8 @@ public class PaddleController : NetworkBehaviour
         }
     }
 
-    /// client -> server. The owner's input for this tick.
-    /// client -> server. The owner's input for this tick. The server checks it before it believes it.
-    /// client -> server. The owner's input for this tick. The server checks it before it believes it.
-    /// Order: well-formed? -> too fast? -> allowed by the game rule? -> write state.
+    /// client -> server. The owner's input for this tick. The server checks it before it believes it:
+    /// Step 3 checks (NaN, clamp, spectator) -> Step 4 rate limit -> write state.
     [ServerRpc]
     private void ServerSetAxis(float axis)
     {
