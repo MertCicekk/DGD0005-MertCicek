@@ -166,6 +166,7 @@ MonoBehaviour:
   _addedNetworkObject: {fileID: 7751698003708684260}
   _networkObjectCache: {fileID: 0}
   speed: 8
+  RejectedInputs: 0
 --- !u!114 &2886730420499183573
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -193,7 +194,7 @@ MonoBehaviour:
   _enableTeleport: 0
   _teleportThreshold: 1
   _clientAuthoritative: 0
-  _sendToOwner: 0
+  _sendToOwner: 1
   _interval: 1
   _synchronizePosition: 1
   _positionSensitivity: 0.001

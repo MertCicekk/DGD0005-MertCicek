@@ -25,6 +25,12 @@ public class PaddleController : NetworkBehaviour
     /// Homework 2, Step 2. Server-only memory: the last input the server accepted.
     private float _serverAxis;
 
+    /// Homework 2, Step 4. Server-only. One timestamp per paddle = one per client (NOT static).
+    private const double MinInputGap = 0.030;           // seconds
+    private double _lastInputTime = -1;
+    public int RejectedInputs;
+
+
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() { All.Clear(); Local = null; }
@@ -48,6 +54,8 @@ public class PaddleController : NetworkBehaviour
         Side.Value = side;
 
         Debug.Log($"[Server] client {OwnerId} gets side {SideName(side)}");
+        ConnectionHud.Panels.Add(() => $"Rejected inputs (paddle {OwnerId}): {RejectedInputs}");   // Homework 2, Step 4
+
         GameState.Announce($"client {OwnerId} joined as {SideName(side)}");
     }
 
@@ -195,6 +203,8 @@ public class PaddleController : NetworkBehaviour
 
     /// client -> server. The owner's input for this tick.
     /// client -> server. The owner's input for this tick. The server checks it before it believes it.
+    /// client -> server. The owner's input for this tick. The server checks it before it believes it.
+    /// Order: well-formed? -> too fast? -> allowed by the game rule? -> write state.
     [ServerRpc]
     private void ServerSetAxis(float axis)
     {
@@ -202,6 +212,16 @@ public class PaddleController : NetworkBehaviour
         if (float.IsNaN(axis)) return;
         axis = Mathf.Clamp(axis, -1f, 1f);                  // a client that sends 50 gets 1
         if (Side.Value == Spectator) return;                // a spectator has no paddle to move
+
+        // Step 4: no second input inside 30 ms
+        double now = TimeManager.TicksToTime(TimeManager.Tick);
+        if (_lastInputTime >= 0 && now - _lastInputTime < MinInputGap)
+        {
+            RejectedInputs++;
+            Debug.Log($"[Server] Rejected input from client {OwnerId}: too fast.");
+            return;
+        }
+        _lastInputTime = now;
 
         _serverAxis = axis;
     }
