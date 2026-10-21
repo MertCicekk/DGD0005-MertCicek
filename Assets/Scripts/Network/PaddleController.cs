@@ -22,6 +22,10 @@ public class PaddleController : NetworkBehaviour
 
     [SerializeField] private float speed = 8f;
 
+    /// Homework 2, Step 2. Server-only memory: the last input the server accepted.
+    private float _serverAxis;
+
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() { All.Clear(); Local = null; }
 
@@ -91,15 +95,6 @@ public class PaddleController : NetworkBehaviour
         if (kb == null) return;
 
         if (kb.spaceKey.wasPressedThisFrame) RequestServe(); // ask; the server decides (Step 8)
-
-        if (Side.Value == Spectator) return;
-
-        float dir = 0f;                                     // one keyboard per machine: W/S or arrows
-        if (kb.wKey.isPressed || kb.upArrowKey.isPressed)   dir += 1f;
-        if (kb.sKey.isPressed || kb.downArrowKey.isPressed) dir -= 1f;
-
-        transform.position += Vector3.forward * dir * speed * Time.deltaTime;
-        Court.ClampPaddle(transform);
     }
 
     // ---------- Step 8: the three RPC directions ----------
@@ -160,4 +155,48 @@ public class PaddleController : NetworkBehaviour
     }
 
     public static string SideName(int side) => side == Left ? "LEFT" : side == Right ? "RIGHT" : "SPECTATOR";
+
+
+    // ---------- Homework 2, Step 2: input up, position down ----------
+    public override void OnStartNetwork()
+    {
+        base.OnStartNetwork();
+        TimeManager.OnTick += OnTick;                       // here, not in Awake: TimeManager exists only once networked
+    }
+
+    public override void OnStopNetwork()
+    {
+        base.OnStopNetwork();
+        if (TimeManager != null) TimeManager.OnTick -= OnTick;
+    }
+
+    private void OnTick()
+    {
+        // 1. Owner sends: input, not position. Every tick, also when it is 0.
+        if (IsOwner && Side.Value != Spectator)
+        {
+            Keyboard kb = Keyboard.current;
+            float axis = 0f;
+            if (kb != null)
+            {
+                if (kb.wKey.isPressed || kb.upArrowKey.isPressed)   axis += 1f;
+                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) axis -= 1f;
+            }
+            ServerSetAxis(axis);
+        }
+
+        // 2. Server moves: the only place the paddle position is written.
+        if (IsServerInitialized)
+        {
+            transform.position += Vector3.forward * _serverAxis * speed * (float)TimeManager.TickDelta;
+            Court.ClampPaddle(transform);
+        }
+    }
+
+    /// client -> server. The owner's input for this tick.
+    [ServerRpc]
+    private void ServerSetAxis(float axis)
+    {
+        _serverAxis = axis;
+    }
 }
