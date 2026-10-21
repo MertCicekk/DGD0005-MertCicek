@@ -103,6 +103,16 @@ public class PaddleController : NetworkBehaviour
         if (kb == null) return;
 
         if (kb.spaceKey.wasPressedThisFrame) RequestServe(); // ask; the server decides (Step 8)
+
+        // ---------- Homework 2, Step 5: the cheating client (debug keys, the server must survive them) ----------
+        if (kb.cKey.wasPressedThisFrame)                    // C: spam, 20 inputs in one frame
+            for (int i = 0; i < 20; i++) ServerSetAxis(1f);
+
+        if (kb.xKey.wasPressedThisFrame)                    // X: speed hack
+            ServerSetAxis(50f);
+
+        if (kb.tKey.wasPressedThisFrame && NetworkBall.Instance != null)   // T: teleport, on the client, no RPC
+            transform.position = NetworkBall.Instance.transform.position;
     }
 
     // ---------- Step 8: the three RPC directions ----------
