@@ -31,7 +31,16 @@ public class PaddleController : NetworkBehaviour
     public int RejectedInputs;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStatics() { All.Clear(); Local = null; }
+    private static void ResetStatics() { All.Clear(); Local = null; _countPanelAdded = false; }
+
+    /// Week 5, Step 3. One HUD panel per process that shows All.Count (on a host: 1 paddle = 1, not 2).
+    private static bool _countPanelAdded;
+    private static void AddCountPanel()
+    {
+        if (_countPanelAdded) return;
+        _countPanelAdded = true;
+        ConnectionHud.Panels.Add(() => $"Paddles in All: {All.Count}");
+    }
 
     private void Awake()
     {
@@ -44,14 +53,15 @@ public class PaddleController : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        if (!All.Contains(this)) All.Add(this);
+        if (!All.Contains(this)) All.Add(this);             // Week 5, Step 3: guarded, the host runs both callbacks
+        AddCountPanel();
 
         int side = Spectator;                               // first free side, else spectator
         if (!IsTaken(Left)) side = Left;
         else if (!IsTaken(Right)) side = Right;
         Side.Value = side;
 
-        Debug.Log($"[Server] client {OwnerId} gets side {SideName(side)}");
+        Debug.Log($"[Server] Spawned paddle #{ObjectId} for client {OwnerId}: {SideName(side)}");
         ConnectionHud.Panels.Add(() => $"Rejected inputs (paddle {OwnerId}): {RejectedInputs}");   // Homework 2, Step 4
 
         GameState.Announce($"client {OwnerId} joined as {SideName(side)}");
@@ -62,6 +72,13 @@ public class PaddleController : NetworkBehaviour
         base.OnStopServer();
         All.Remove(this);
         GameState.Announce($"client {OwnerId} left ({SideName(Side.Value)})");
+
+        // Week 5, Step 6: a player left, the host keeps playing: reset the ball, hand over the serve.
+        if (Side.Value != Spectator)
+        {
+            if (NetworkBall.Instance != null) NetworkBall.Instance.ResetForLeave();
+            if (GameState.Instance != null) GameState.Instance.PlayerLeft(Side.Value);
+        }
     }
 
     private bool IsTaken(int side)
@@ -75,12 +92,13 @@ public class PaddleController : NetworkBehaviour
     public override void OnStartClient()
     {
         base.OnStartClient();
-        if (!All.Contains(this)) All.Add(this);
+        if (!All.Contains(this)) All.Add(this);             // Week 5, Step 3: guarded, the host runs both callbacks
+        AddCountPanel();
 
         if (IsOwner)
         {
             Local = this;
-            Debug.Log($"[Client] I am client {OwnerId}, side {SideName(Side.Value)}");
+            Debug.Log($"[Client] I am client {OwnerId}, playing {SideName(Side.Value)}. My paddle is #{ObjectId}");
         }
         Place();
     }

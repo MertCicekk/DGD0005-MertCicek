@@ -61,6 +61,16 @@ public class GameState : NetworkBehaviour
         if (conceder != null) conceder.YouServe(conceder.Owner);
     }
 
+    /// Week 5, Step 6. Server only. A player left: if it was their serve, hand it to the side that is still here,
+    /// otherwise nobody could serve.
+    public void PlayerLeft(int side)
+    {
+        if (!IsServerInitialized) return;
+        if (ServingSide.Value != side) return;
+        PaddleController other = PaddleController.FindBySide(1 - side);
+        if (other != null) ServingSide.Value = other.Side.Value;
+    }
+
     /// Server only. Adds a line to the feed; keeps the last six.
     public static void Announce(string line)
     {

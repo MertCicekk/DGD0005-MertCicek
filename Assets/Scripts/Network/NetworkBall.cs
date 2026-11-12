@@ -93,6 +93,13 @@ public class NetworkBall : NetworkBehaviour
         InPlay.Value = true;
     }
 
+    /// Week 5, Step 6. Server only. A player left: the ball goes back to the centre and waits.
+    public void ResetForLeave()
+    {
+        if (!IsServerInitialized) return;
+        ResetToCentre();
+    }
+
     private void ResetToCentre()
     {
         transform.position = new Vector3(0, Court.BallY, 0);

@@ -19,6 +19,7 @@ public class ConnectionLogger : MonoBehaviour
         _nm.ServerManager.OnServerConnectionState += OnServerConnectionState;
         _nm.ServerManager.OnRemoteConnectionState += OnRemoteConnectionState;
         _nm.ClientManager.OnClientConnectionState += OnClientConnectionState;
+        _nm.ClientManager.OnAuthenticated += OnAuthenticated;
     }
 
     private void OnDestroy()
@@ -27,24 +28,35 @@ public class ConnectionLogger : MonoBehaviour
         _nm.ServerManager.OnServerConnectionState -= OnServerConnectionState;
         _nm.ServerManager.OnRemoteConnectionState -= OnRemoteConnectionState;
         _nm.ClientManager.OnClientConnectionState -= OnClientConnectionState;
+        _nm.ClientManager.OnAuthenticated -= OnAuthenticated;
     }
 
     // this process as a server: Starting -> Started -> Stopping -> Stopped
     private void OnServerConnectionState(ServerConnectionStateArgs args)
     {
-        Debug.Log($"[Server] server {args.ConnectionState}");
+        Debug.Log($"[Server] {args.ConnectionState}");
     }
 
     // another client, as the server sees it
     private void OnRemoteConnectionState(NetworkConnection conn, RemoteConnectionStateArgs args)
     {
         string what = args.ConnectionState == RemoteConnectionState.Started ? "connected" : "disconnected";
-        Debug.Log($"[Server] client {conn.ClientId} {what}. Clients: {_nm.ServerManager.Clients.Count}");
+        Debug.Log($"[Server] Client {conn.ClientId} {what}");
     }
 
     // this process as a client
     private void OnClientConnectionState(ClientConnectionStateArgs args)
     {
-        Debug.Log($"[Client] client {args.ConnectionState}");
+        Debug.Log($"[Client] {args.ConnectionState}");
+
+        // Week 5, Step 2: checked here, in the client handler, because the server is already started by now.
+        if (args.ConnectionState == LocalConnectionState.Started && _nm.ServerManager.Started)
+            Debug.Log("[Host] This process is the server AND a client. RTT is 0 ms.");
+    }
+
+    // the server has accepted this client and told it its id
+    private void OnAuthenticated()
+    {
+        Debug.Log($"[Client] Connected, the server calls me client {_nm.ClientManager.Connection.ClientId}");
     }
 }

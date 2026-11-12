@@ -36,6 +36,7 @@ public class ConnectionHud : MonoBehaviour
     }
 
     private string _address = "localhost";
+    private ushort _port = 7770;                   // Week 5: Start Host connects the client to this port
     private NetworkManager _nm;
 
     // bytes per second, measured from the StatisticsManager (Step 10)
@@ -53,7 +54,7 @@ public class ConnectionHud : MonoBehaviour
         if (_nm == null) { Debug.LogWarning("[Hud] No NetworkManager in the scene."); return; }
 
         Tugboat tugboat = _nm.TransportManager.GetTransport<Tugboat>();
-        if (tugboat != null) _address = tugboat.GetClientAddress();
+        if (tugboat != null) { _address = tugboat.GetClientAddress(); _port = tugboat.GetPort(); }
 
         StatisticsManager sm = _nm.StatisticsManager;
         if (sm != null && sm.TryGetNetworkTrafficStatistics(out _stats))
@@ -133,6 +134,24 @@ public class ConnectionHud : MonoBehaviour
         }
         GUILayout.EndHorizontal();
 
+        // --- Week 5, Step 2: a host is a server AND a client in one process ---
+        if (!server && !client)
+        {
+            if (GUILayout.Button("Start Host", GUILayout.Height(24)))
+            {
+                _nm.ServerManager.StartConnection();
+                _nm.ClientManager.StartConnection("127.0.0.1", _port);
+            }
+        }
+        else if (server && client)
+        {
+            if (GUILayout.Button("Stop Host", GUILayout.Height(24)))
+            {
+                _nm.ClientManager.StopConnection();         // the client first,
+                _nm.ServerManager.StopConnection(true);     // then the server
+            }
+        }
+
         GUILayout.BeginHorizontal();
         GUILayout.Label("Address", GUILayout.Width(55));
         GUI.enabled = !client;
@@ -143,8 +162,9 @@ public class ConnectionHud : MonoBehaviour
         // --- connection box ---
         string role = server && client ? "Server + Client" : server ? "Server" : client ? "Client" : "Offline";
         string text = $"<b>{role}</b>";
-        if (server) text += $"\nClients: {_nm.ServerManager.Clients.Count}";
-        if (client) text += $"\nClientId: {_nm.ClientManager.Connection.ClientId}   RTT: {_nm.TimeManager.RoundTripTime} ms";
+        if (server) text += $"\nServer: {_nm.ServerManager.Clients.Count} client(s)";
+        if (client) text += $"\nClient: my id = {_nm.ClientManager.Connection.ClientId}";
+        if (client) text += $"\nRTT (ping): {_nm.TimeManager.RoundTripTime} ms";
         if (server || client) text += $"\nTick: {_nm.TimeManager.Tick}   Tick rate: {_nm.TimeManager.TickRate}";
         if (_stats == null)
             text += "\n<color=#888>bytes/s: StatisticsManager off</color>";
