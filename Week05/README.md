@@ -53,6 +53,8 @@ Why not, when the sheet says it should: since Homework 2 my paddle is **server-a
 
 The host never waits: the server bounces the ball on the host's paddle itself, and the host's serve starts the instant Space is pressed. That is host advantage.
 
+**A second guest, the spectator.** I activated MPPM Player 4 and connected it after Player 3. It got ClientId 2 and the side SPECTATOR (feed: `client 2 joined as SPECTATOR`). On its screen: its own paddle hidden, both LEFT and RIGHT paddles and the ball visible. I served from the host; the spectator saw the ball, then the score go to 1 : 0 and the feed line `LEFT scored. 1 : 0`. Its input does nothing: I sent `ServerSetAxis(1)` from the spectator, and on the server its paddle stayed at z = 0.00, because `ServerSetAxis` returns when `Side` is SPECTATOR (and `OnTick` does not even send input for a spectator).
+
 **Tick Rate 10, one rally, the ball on the guest:**
 
 I logged the ball's position on the guest (Player 3) every frame for 1.5 s after a serve:
@@ -112,6 +114,8 @@ When a player leaves, `PaddleController.OnStopServer` resets the ball to the cen
    | Host | false | true | `OnStartServer`, `OnStartClient` | nobody (the host's keyboard drives only the host's paddle) |
    | Guest | true | false | `OnStartClient` | the guest |
    | Spectator | false | false | `OnStartClient` | nobody |
+
+   Checked with host + Player 3 (guest, paddle #4) + Player 4 (spectator): #4 reads `IsOwner = False, IsServerInitialized = True` on the host, `True, False` on the guest, `False, False` on the spectator.
 
 3. **Two serves traced.**
    Host: Space → `RequestServe()` ServerRpc → runs at once in the same process → `ball.Serve` → ball moves.
