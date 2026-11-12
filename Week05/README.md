@@ -123,9 +123,9 @@ When a player leaves, `PaddleController.OnStopServer` resets the ball to the cen
 5. **State or event.**
    score → **state** (SyncVar) · "RIGHT scored!" → **event** (ObserversRpc) · whose serve → **state** (`ServingSide` SyncVar) · "YOU SERVE" → **event** (TargetRpc) · the ball's position → **state** (NetworkTransform) · the feed → **state** (SyncList).
 
-6. **A guest writes `GameState.Instance.LeftScore.Value = 9`.** Only the guest's local copy changes (FishNet warns that a client cannot write a server SyncVar); nothing is sent, and the next update from the server overwrites it. On the host the same line *works* because the host is also the server: `IsServerInitialized` is true there, it writes the server's copy and that is synced to everyone. That is why you test from a guest.
+6. **A guest writes `GameState.Instance.LeftScore.Value = 9`.** Nothing happens, not even on the guest's own screen. In FishNet 4.7.3 the SyncVar setter calls `CanNetworkSetValues`: the server is not started on the guest and the SyncVar's write permission is server-only, so it logs a warning and returns before the value is changed. Nothing is sent. On the host the same line *works* because the host is also the server: `IsServerInitialized` is true there, it writes the server's copy and that is synced to everyone. That is why you test from a guest.
 
-7. **Feed logs twice on the host.** A goal sound would go behind `if (!asServer)` in the `OnChange` callback, so only the client half plays it. The score log does not double because it is written only by the server (`Announce` returns when `!IsServerInitialized`), and the server half runs once.
+7. **Feed logs twice on the host.** A `SyncVar`/`SyncList` `OnChange` callback runs twice on the host: once with `asServer = true` (server half), once with `asServer = false` (client half). A goal sound in that callback goes behind `if (!asServer)`, so only the client half plays it. The score log does not double because only the server writes it: `GameState.Announce` logs `[Server] feed: …` and returns when `!IsServerInitialized`, and the server half runs it once. In my code the goal flash is an `ObserversRpc` (`AnnounceGoal`), which runs once per client, so on the host it also plays once.
 
 ---
 
