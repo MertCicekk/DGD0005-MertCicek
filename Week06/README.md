@@ -73,7 +73,7 @@ Onur cloned my repo and opened it in Unity 6000.3.2f1 — a join code works only
 | Partner's name | Onur Karakoyun |
 | Who hosted, who joined | I hosted (LEFT), Onur joined (RIGHT) |
 | The two networks | my home Wi-Fi (fibre) ↔ Onur's phone hotspot (4.5G) |
-| Guest RTT through the Relay | 70–85 ms |
+| Guest RTT through the Relay | 85–135 ms (113 ms in the screenshot) |
 | Guest RTT on 127.0.0.1 (Step 6) | 0–33 ms |
 | First try? If not, which fix line | **No.** Onur first typed my code into **his own** Pong → `[Relay] Join failed`. Fix line: *"Partner's code is refused, yours works → two different cloud projects. The guest must run the host's repo."* He opened my repo and it joined. |
 
