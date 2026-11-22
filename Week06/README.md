@@ -44,8 +44,41 @@ Guest window after the host pressed G:
 2. **Which of the host's cheats could a guest see?** T, G and Speed 40 — the paddle on the ball, LEFT at 9 and the five-times-faster paddle all show in the guest window, because the host's state is what the guest mirrors.
 3. **Ranked game with strangers: host or dedicated server?** A dedicated server, because on a host one of the players owns the rules and can cheat without any check stopping them.
 
+## Step 4 — Packages and the transport
+
+- Package Manager: **Multiplayer Services** (`com.unity.services.multiplayer`) and **FishyUnityTransport** from `https://github.com/ooonush/FishyUnityTransport.git?path=Assets/FishNet/Plugins/FishyUnityTransport`.
+- Project Settings ‣ Services: project linked to a Unity Cloud project; Relay enabled in the dashboard.
+- `NetworkManager`: **UnityTransport** added, Connection Data Port = 7770. `TransportManager ‣ Transport` = UnityTransport. Tugboat stays on the object, unused.
+
 ## Step 5 — RelayLink.cs
+
+[`Assets/Scripts/Network/RelayLink.cs`](../Assets/Scripts/Network/RelayLink.cs): signs in anonymously, then `StartHost` (allocation → join code → `SetRelayServerData` → server + client) and `StartGuest` (join code → join allocation → `SetRelayServerData` → client).
+
+- **What does `CreateAllocationAsync` return?** An `Allocation`: a reserved slot on one Relay server — its IP and port, the allocation ID, the key and the connection data the host needs to talk through it.
+- **What does `GetJoinCodeAsync` return?** A short string, the join code (six characters), that points to that allocation so a guest can find the same Relay server.
+- **Why is `SetRelayServerData` before `StartConnection`?** `StartConnection` opens the socket with whatever the transport knows at that moment; without the Relay data first it has no Relay server to connect to and fails (the server goes Stopped).
 
 ## Step 6 — Two buttons and a code
 
+`ConnectionHud`: fields `_joinCode`, `_relayCode`, `_relayBusy`; `async void HostViaRelay()` and `JoinViaRelay()` (errors → red `[Relay] Host failed …` / `[Relay] Join failed …`). When server and client are Stopped and `_relayBusy` is false: **Host via Relay**, a text field and **Join via Relay**. When `_relayCode` is set and the server is Started: big `JOIN CODE: …`. Stop Host clears `_relayCode`.
+
 ## Step 7 — Your partner, from another network
+
+### Connection card
+
+| | |
+|---|---|
+| Partner's name | _TODO_ |
+| Who hosted, who joined | _TODO_ |
+| The two networks | _TODO_ |
+| Guest RTT through the Relay | _TODO_ ms |
+| Guest RTT on 127.0.0.1 (Step 6) | _TODO_ ms |
+| First try? If not, which fix line | _TODO_ |
+
+Guest window with RTT and score:
+
+![Guest window through the Relay](step7-guest-relay.png)
+
+1. **Who connects to whom through the Relay?** Nobody connects to the other player: the host and the guest each open an outgoing connection to the same Unity Relay server, and the Relay forwards the packets between them.
+2. **Why did no router need a change?** Both connections go *out* to the Relay, and every home router already lets outgoing connections and their replies through, so no port had to be opened for the host.
+3. **The guest's paddle feels later than in Step 6. Where did the extra milliseconds come from?** Each input now travels guest → Relay → host and the answer host → Relay → guest over the internet, instead of staying inside one PC, so the RTT grows by the two internet trips.

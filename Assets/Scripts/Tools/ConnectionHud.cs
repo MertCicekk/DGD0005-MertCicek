@@ -39,6 +39,11 @@ public class ConnectionHud : MonoBehaviour
     private ushort _port = 7770;                   // Week 5: Start Host connects the client to this port
     private NetworkManager _nm;
 
+    // Homework 3, Step 6: Unity Relay
+    private string _joinCode = "";                 // what the guest types
+    private string _relayCode = "";                // the host's code, shown big on the HUD
+    private bool _relayBusy;                       // a Relay call is running: hide the buttons (no two rooms)
+
     // bytes per second, measured from the StatisticsManager (Step 10)
     private NetworkTrafficStatistics _stats;
     private ulong _serverIn, _serverOut, _clientIn, _clientOut;
@@ -46,7 +51,7 @@ public class ConnectionHud : MonoBehaviour
     private float _windowStart;
     private static FieldInfo _inField, _outField, _bytesField;
 
-    private GUIStyle _box, _flashStyle;
+    private GUIStyle _box, _flashStyle, _codeStyle;
 
     private void Start()
     {
@@ -65,6 +70,38 @@ public class ConnectionHud : MonoBehaviour
     private void OnDestroy()
     {
         if (_stats != null) _stats.OnNetworkTraffic -= OnTraffic;
+    }
+
+    // ---------- Homework 3, Step 6: Host / Join via Relay ----------
+    // async void: a button click cannot wait, so the method runs on and catches its own errors.
+    private async void HostViaRelay()
+    {
+        _relayBusy = true;
+        try
+        {
+            _relayCode = await RelayLink.StartHost(_nm) ?? "";
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Relay] Host failed: {e.Message}");
+            _relayCode = "";
+        }
+        finally { _relayBusy = false; }
+    }
+
+    private async void JoinViaRelay()
+    {
+        if (string.IsNullOrWhiteSpace(_joinCode)) { Flash("TYPE A CODE"); return; }
+        _relayBusy = true;
+        try
+        {
+            await RelayLink.StartGuest(_nm, _joinCode);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Relay] Join failed: {e.Message}");
+        }
+        finally { _relayBusy = false; }
     }
 
     private void OnTraffic(uint tick, object serverTraffic, object clientTraffic)
@@ -106,6 +143,7 @@ public class ConnectionHud : MonoBehaviour
         {
             _box = new GUIStyle(GUI.skin.box) { alignment = TextAnchor.UpperLeft, fontSize = 12, richText = true, padding = new RectOffset(6, 6, 4, 4) };
             _flashStyle = new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontSize = 40, fontStyle = FontStyle.Bold };
+            _codeStyle  = new GUIStyle(GUI.skin.label) { fontSize = 28, fontStyle = FontStyle.Bold };
         }
 
         GUILayout.BeginArea(new Rect(8, 8, 250, Screen.height - 16));
@@ -149,8 +187,24 @@ public class ConnectionHud : MonoBehaviour
             {
                 _nm.ClientManager.StopConnection();         // the client first,
                 _nm.ServerManager.StopConnection(true);     // then the server
+                _relayCode = "";                            // Homework 3: a code dies with its host
             }
         }
+
+        // --- Homework 3, Step 6: the join code ---
+        if (!server && !client && !_relayBusy)
+        {
+            if (GUILayout.Button("Host via Relay", GUILayout.Height(24))) HostViaRelay();
+            GUILayout.BeginHorizontal();
+            _joinCode = GUILayout.TextField(_joinCode, 6, GUILayout.Width(90));
+            if (GUILayout.Button("Join via Relay", GUILayout.Height(24))) JoinViaRelay();
+            GUILayout.EndHorizontal();
+        }
+        else if (_relayBusy)
+            GUILayout.Box("Relay: connecting…", _box);
+
+        if (!string.IsNullOrEmpty(_relayCode) && server)
+            GUILayout.Label($"JOIN CODE: {_relayCode}", _codeStyle);
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("Address", GUILayout.Width(55));
