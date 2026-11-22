@@ -20,3 +20,6 @@ In my Pong, each player **owns** their own paddle: it is spawned for their conne
 ## Changes each week
 
 - **Week 3:** FishNet project, connection logger, networked paddles (`PaddleController`), one server-moved ball (`NetworkBall`, `BallSpawner`), shared score and event feed (`GameState`), serve/goal RPCs, network statistics at tick rate 30.
+- **Week 4 (Homework 2):** server authority — the owner sends only its input every tick, the server moves and clamps the paddle; input checks (NaN, clamp, spectator), a 30 ms rate limit per client, cheat keys C/X/T. Notes: [`Week04/README.md`](Week04/README.md).
+- **Week 5:** Pong on a host — Start Host / Stop Host, the `[Host]` log line, `All.Add` guarded in both callbacks. Notes: [`Week05/README.md`](Week05/README.md).
+- **Week 6 (Homework 3):** guest cheats fail, host cheats work (debug key G), serve limit 1 s per player with a `TargetRpc` refusal; Unity Relay — Multiplayer Services + FishyUnityTransport (`UnityTransport`, port 7770), `RelayLink`, Host/Join via Relay and the join code. Notes: [`Week06/README.md`](Week06/README.md).
