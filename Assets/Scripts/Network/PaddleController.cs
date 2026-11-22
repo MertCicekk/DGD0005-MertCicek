@@ -129,6 +129,10 @@ public class PaddleController : NetworkBehaviour
 
         if (kb.tKey.wasPressedThisFrame && NetworkBall.Instance != null)   // T: teleport, on the client, no RPC
             transform.position = NetworkBall.Instance.transform.position;
+
+        // Homework 3, Step 1. G: score edit, a direct SyncVar write, no RPC
+        if (kb.gKey.wasPressedThisFrame && GameState.Instance != null)
+            GameState.Instance.LeftScore.Value = 9;
     }
 
     // ---------- Step 8: the three RPC directions ----------
