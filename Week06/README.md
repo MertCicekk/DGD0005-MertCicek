@@ -64,16 +64,20 @@ Guest window after the host pressed G:
 
 ## Step 7 — Your partner, from another network
 
+Onur cloned my repo and opened it in Unity 6000.3.2f1 — a join code works only inside one Unity cloud project, so the guest must run the host's project. I clicked **Host via Relay** at home and sent the code on WhatsApp; Onur typed it on his laptop on his phone hotspot and clicked **Join via Relay**. We played to 3 points (3 : 2, I won). The other direction (Onur hosts in his repo, I join from my phone hotspot) is on Onur's card.
+
 ### Connection card
 
 | | |
 |---|---|
-| Partner's name | _TODO_ |
-| Who hosted, who joined | _TODO_ |
-| The two networks | _TODO_ |
-| Guest RTT through the Relay | _TODO_ ms |
-| Guest RTT on 127.0.0.1 (Step 6) | _TODO_ ms |
-| First try? If not, which fix line | _TODO_ |
+| Partner's name | Onur Karakoyun |
+| Who hosted, who joined | I hosted (LEFT), Onur joined (RIGHT) |
+| The two networks | my home Wi-Fi (fibre) ↔ Onur's phone hotspot (4.5G) |
+| Guest RTT through the Relay | 70–85 ms |
+| Guest RTT on 127.0.0.1 (Step 6) | 0–33 ms |
+| First try? If not, which fix line | **No.** Onur first typed my code into **his own** Pong → `[Relay] Join failed`. Fix line: *"Partner's code is refused, yours works → two different cloud projects. The guest must run the host's repo."* He opened my repo and it joined. |
+
+Nobody typed an IP, nobody changed a router.
 
 Guest window with RTT and score:
 
@@ -82,3 +86,4 @@ Guest window with RTT and score:
 1. **Who connects to whom through the Relay?** Nobody connects to the other player: the host and the guest each open an outgoing connection to the same Unity Relay server, and the Relay forwards the packets between them.
 2. **Why did no router need a change?** Both connections go *out* to the Relay, and every home router already lets outgoing connections and their replies through, so no port had to be opened for the host.
 3. **The guest's paddle feels later than in Step 6. Where did the extra milliseconds come from?** Each input now travels guest → Relay → host and the answer host → Relay → guest over the internet, instead of staying inside one PC, so the RTT grows by the two internet trips.
+
