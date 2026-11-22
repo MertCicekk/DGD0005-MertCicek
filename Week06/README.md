@@ -22,6 +22,8 @@ A SyncVar only travels server → clients; the guest is not the server, so its w
 
 ## Step 2 — Serve rate limit
 
+`PaddleController.RequestServe` (the `[ServerRpc]`): after the null check, before the `ServingSide` check, the server reads `TimeManager.TicksToTime(TimeManager.Tick)`. A second request inside `MinServeGap = 1.0` s gets `TargetRefused(Owner, "TOO FAST")` and returns. `_lastServeTime` is an instance field: one timestamp per paddle, so one limit per player. The refusal is a `[TargetRpc]`, so only the player who asked sees `TOO FAST`.
+
 ## Step 3 — The host cheats
 
 ## Step 5 — RelayLink.cs

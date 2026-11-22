@@ -30,6 +30,10 @@ public class PaddleController : NetworkBehaviour
     private double _lastInputTime = -1;
     public int RejectedInputs;
 
+    /// Homework 3, Step 2. Server-only. One serve request per second, per paddle (NOT static).
+    private const double MinServeGap = 1.0;             // seconds
+    private double _lastServeTime = -1;
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() { All.Clear(); Local = null; _countPanelAdded = false; }
 
@@ -144,6 +148,16 @@ public class PaddleController : NetworkBehaviour
         GameState gs = GameState.Instance;
         NetworkBall ball = NetworkBall.Instance;
         if (gs == null || ball == null) return;
+
+        // Homework 3, Step 2: too fast? (well-formed -> too fast -> allowed by the rule -> write state -> announce)
+        double now = TimeManager.TicksToTime(TimeManager.Tick);
+        if (_lastServeTime >= 0 && now - _lastServeTime < MinServeGap)
+        {
+            TargetRefused(Owner, "TOO FAST");
+            return;
+        }
+        _lastServeTime = now;
+
         if (Side.Value != gs.ServingSide.Value) return;     // not your serve
         if (ball.InPlay.Value) return;                       // already in play
 
@@ -163,6 +177,13 @@ public class PaddleController : NetworkBehaviour
     public void YouServe(NetworkConnection target)
     {
         ConnectionHud.Flash("YOU SERVE");
+    }
+
+    /// Homework 3, Step 2. server -> the one client whose request was refused.
+    [TargetRpc]
+    private void TargetRefused(NetworkConnection target, string why)
+    {
+        ConnectionHud.Flash(why);
     }
 
     public static PaddleController FindBySide(int side)
